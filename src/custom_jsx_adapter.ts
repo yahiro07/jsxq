@@ -23,6 +23,14 @@ function addClassNamesToProps(props: any, ...classNames: IClassName[]) {
   return { ...props, className: cx(props.className, ...classNames) };
 }
 
+function serializePropsQSignature(propsQ: IPropsQValue) {
+  if (Array.isArray(propsQ)) {
+    return propsQ.map((it) => it?.toString()).join("_");
+  } else {
+    return propsQ.toString();
+  }
+}
+
 const symbolFcAttachment = Symbol("props-q-fc-attachment");
 type IOriginalFunctionComponent = Function & {
   [symbolFcAttachment]?: Record<string, Function>;
@@ -32,27 +40,32 @@ export function customJsxAdapter(
   destJsxFn: IDestJsxFn,
   tag: IVNodeTag,
   props: IComponentPropsExtra,
-  key: IKey
+  key: IKey,
+  ...jsxRestArgs: any[]
 ) {
   if ("if" in props && !props.if) return null;
-  const { q: propsQ, ...restProps } = props;
-
-  if (typeof tag === "function" && propsQ) {
-    const originalFunctionComponent = tag as IOriginalFunctionComponent;
-    const attachment = (originalFunctionComponent[symbolFcAttachment] ??= {});
-
-    tag = attachment[propsQ.toString()] ??= (props: IComponentPropsExtra) => {
-      const res = originalFunctionComponent(props);
-      if (res === null) return null;
-      res.props = addClassNamesToProps(res.props, ...enclose(propsQ));
-      return res;
-    };
+  const { q: propsQ, if: _, ...restProps } = props;
+  let modProps = { ...restProps };
+  if (propsQ) {
+    if (typeof tag === "function") {
+      //For function components, create a wrapper function
+      //that patches the returned JSX element of original component.
+      const originalFunctionComponent = tag as IOriginalFunctionComponent;
+      const sig = serializePropsQSignature(propsQ);
+      const attachment = (originalFunctionComponent[symbolFcAttachment] ??= {});
+      tag = attachment[sig] ??= (innerProps: object) => {
+        const jsxNode = originalFunctionComponent(innerProps);
+        if (jsxNode === null) return null;
+        return {
+          ...jsxNode,
+          props: addClassNamesToProps(jsxNode.props, ...enclose(propsQ)),
+        };
+      };
+    } else {
+      //For intrinsic elements, just append q props to className
+      modProps = addClassNamesToProps(restProps, ...enclose(propsQ));
+    }
   }
 
-  let modProps = props;
-  if (typeof tag !== "function" && propsQ) {
-    modProps = addClassNamesToProps(restProps, ...enclose(propsQ));
-  }
-
-  return destJsxFn(tag, modProps, key);
+  return destJsxFn(tag, modProps, key, ...jsxRestArgs);
 }
