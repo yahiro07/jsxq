@@ -1,6 +1,6 @@
 {
   "name": "jsxq",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Jsx runtime adapter provides custom shorthand props.",
   "author": "yahiro",
   "license": "MIT",
