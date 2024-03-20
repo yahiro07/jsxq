@@ -1,0 +1,35 @@
+{
+  "name": "qjex",
+  "version": "0.1.0",
+  "description": "Jsx runtime adapter provides custom shorthand props.",
+  "author": "yahiro",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./jsx-runtime": {
+      "import": "./dist/esm/jsx-runtime.js"
+    },
+    "./jsx-dev-runtime": {
+      "import": "./dist/esm/jsx-dev-runtime.js"
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "keywords": [
+    "react",
+    "jsx"
+  ],
+  "scripts": {
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "build": "npm run build:esm"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.2",
+    "@types/react": "^18.2.67"
+  },
+  "peerDependencies": {
+    "react": ">= 17.0.0"
+  }
+}
